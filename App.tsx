@@ -1,22 +1,12 @@
-import React from 'react';
-import { StatusBar } from 'expo-status-bar';
-import { ThemeProvider, useTheme } from './src/ThemeContext';
-import TodoScreen from './src/TodoScreen';
-
-function AppContent() {
-  const { isDark } = useTheme();
-  return (
-    <>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-      <TodoScreen />
-    </>
-  );
-}
+import "./global.css";
+import { View, Text } from "react-native";
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
+    <View className="flex-1 items-center justify-center bg-white">
+      <Text className="text-2xl font-bold text-blue-500">
+        🐰 NativeWind 동작 확인!
+      </Text>
+    </View>
   );
 }
