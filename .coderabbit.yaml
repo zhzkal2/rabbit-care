@@ -1,2 +1,176 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "ko-KR"
+early_access: false
+
+tone_instructions: >
+  당신은 React Native(Expo), TypeScript, Python(FastAPI) 전문 시니어 코드 리뷰어입니다.
+  엔터프라이즈 수준의 코드 품질을 요구하며, 구체적인 개선 코드 예시와 함께 리뷰합니다.
+  보안 취약점, 성능 이슈, 아키텍처 패턴 위반은 반드시 지적합니다.
+
 reviews:
-  language: ko-KR
+  profile: "assertive"
+  request_changes_workflow: true
+  high_level_summary: true
+  high_level_summary_placeholder: "@coderabbitai summary"
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  sequence_diagrams: true
+
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+      - develop
+
+  path_filters:
+    - "!**/*.lock"
+    - "!**/node_modules/**"
+    - "!**/.expo/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/*.gen.ts"
+
+  path_instructions:
+    # ─── TypeScript / React Native 공통 ───
+    - path: "**/*.{ts,tsx}"
+      instructions: |
+        ## TypeScript 엄격 규칙
+        - `any` 타입 사용 절대 금지. `unknown`이나 구체적 타입으로 대체할 것
+        - 모든 함수의 반환 타입 명시적 선언 필수
+        - 인터페이스와 타입 alias 용도에 맞게 구분하여 사용
+        - optional chaining(?.)과 nullish coalescing(??)을 적절히 사용하는지 확인
+        - enum 대신 `as const` 객체 사용 권장
+        - 타입 단언(as) 최소화, 타입 가드 함수 사용 권장
+
+        ## React / React Native 규칙
+        - 컴포넌트 Props 타입 반드시 별도 interface로 정의
+        - useEffect의 dependency array 누락이나 불필요한 의존성 확인
+        - useMemo, useCallback의 적절한 사용 여부 확인 (과도한 최적화도 지적)
+        - 컴포넌트 내부에서 인라인 함수 정의 지양 (렌더링 성능)
+        - 커스텀 훅으로 분리 가능한 로직이 컴포넌트에 직접 있으면 지적
+        - FlatList에서 keyExtractor, getItemLayout 사용 여부 확인
+        - 이미지 최적화 (적절한 resizeMode, 캐싱 전략)
+
+        ## 네이밍 컨벤션
+        - 컴포넌트: PascalCase
+        - 함수/변수: camelCase
+        - 상수: UPPER_SNAKE_CASE
+        - 타입/인터페이스: PascalCase (I 접두사 금지)
+        - boolean 변수: is/has/should 접두사
+        - 이벤트 핸들러: handle 접두사 (handlePress, handleSubmit)
+
+        ## 코드 품질
+        - 매직 넘버 금지 → 상수로 분리
+        - 하드코딩 문자열 금지 → 상수 또는 i18n 처리
+        - 하나의 파일에 200줄 이상이면 분리 권장
+        - 조건문 3단계 이상 중첩 금지 → early return 패턴 사용
+        - console.log 남아있으면 반드시 지적
+
+    # ─── 화면(Screen) 컴포넌트 ───
+    - path: "src/screens/**"
+      instructions: |
+        ## 아키텍처 규칙
+        - 비즈니스 로직과 UI 로직 반드시 분리 (커스텀 훅 사용)
+        - API 호출 로직이 화면 컴포넌트에 직접 있으면 지적
+        - 에러 상태, 로딩 상태, 빈 상태 처리 여부 확인
+        - 접근성(accessibilityLabel, accessibilityRole) 속성 포함 여부 확인
+        - 하드코딩된 스타일 값 지양 → 디자인 토큰(tailwind 클래스) 사용
+
+    # ─── 공통 컴포넌트 ───
+    - path: "src/components/**"
+      instructions: |
+        ## 재사용성 규칙
+        - 단일 책임 원칙 준수 여부 확인
+        - Props 인터페이스에 JSDoc 주석 필수
+        - 기본값(defaultProps 또는 default parameter) 설정 여부 확인
+        - children, renderProps 패턴 적절히 사용하는지 확인
+        - 컴포넌트 외부에서 스타일 오버라이드 가능한 구조인지 확인
+
+    # ─── 커스텀 훅 ───
+    - path: "src/hooks/**"
+      instructions: |
+        - 반환 타입 명시적 선언 필수
+        - 에러 핸들링 포함 여부 확인
+        - cleanup 함수(useEffect return) 누락 여부 확인
+        - 훅 이름은 use 접두사 필수
+
+    # ─── API / 서비스 레이어 ───
+    - path: "src/services/**"
+      instructions: |
+        - API 응답 타입 정의 여부 확인
+        - 에러 핸들링이 일관성 있게 처리되는지 확인
+        - 타임아웃 설정 여부 확인
+        - 인증 토큰 처리가 안전한지 확인
+        - base URL이 환경변수로 관리되는지 확인
+
+    # ─── 상태 관리 ───
+    - path: "src/store/**"
+      instructions: |
+        - 전역 상태의 범위가 적절한지 확인 (로컬 상태로 충분한 것이 전역에 있지 않은지)
+        - 상태 업데이트가 불변성을 유지하는지 확인
+        - 비동기 액션의 에러 핸들링 확인
+        - 상태 정규화 여부 확인
+
+    # ─── Python / FastAPI ───
+    - path: "**/*.py"
+      instructions: |
+        ## Python 엄격 규칙
+        - PEP 8 스타일 가이드 엄격 준수
+        - 모든 함수에 type hints 필수
+        - docstring(Google style) 필수
+        - bare except 절대 금지 → 구체적 예외 클래스 사용
+        - 함수 하나당 30줄 이내 권장 (단일 책임 원칙)
+        - f-string 사용 권장 (% 포매팅, .format() 지양)
+
+        ## FastAPI 규칙
+        - Pydantic 모델로 request/response 스키마 정의 필수
+        - 의존성 주입(Depends) 패턴 적절히 사용하는지 확인
+        - HTTP 상태코드가 적절한지 확인 (200 남용 금지)
+        - 비동기(async) 함수와 동기 함수 구분이 적절한지 확인
+        - 환경변수 하드코딩 금지 → pydantic-settings 사용
+        - SQL 인젝션 등 보안 취약점 확인
+        - 에러 응답 형식 일관성 확인
+
+    # ─── 설정 파일 ───
+    - path: "**/*.{json,yaml,yml}"
+      instructions: |
+        - 민감한 정보(API 키, 시크릿)가 포함되어 있지 않은지 확인
+        - .env.example 파일과의 일관성 확인
+
+    # ─── 테스트 코드 ───
+    - path: "**/*.{test,spec}.{ts,tsx,py}"
+      instructions: |
+        - 테스트 케이스가 정상/에러/엣지 케이스를 충분히 커버하는지 확인
+        - 테스트 이름이 동작을 명확히 설명하는지 확인
+        - mock 데이터가 현실적인지 확인
+        - 불필요한 스냅샷 테스트 지양
+
+  tools:
+    shellcheck:
+      enabled: true
+    markdownlint:
+      enabled: true
+    github-checks:
+      enabled: true
+      timeout_ms: 120000
+    languagetool:
+      enabled: true
+      enabled_rules: []
+      disabled_rules:
+        - "WHITESPACE_RULE"
+        - "MORPHOLOGICAL_RULE"
+      enabled_categories: []
+      disabled_categories: []
+      language: "ko-KR"
+
+knowledge_base:
+  opt_out: false
+  learnings:
+    scope: auto
+  issues:
+    scope: auto
+
+chat:
+  auto_reply: true
